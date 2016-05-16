@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package>
+  <name>laser_scan_to_map</name>
+  <version>0.1.0</version>
+  <description>creates obstacle map from laser scan</description>
+
+  <maintainer email="ortslil64@gmail.com">Or Tslil</maintainer>
+
+
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+</package>
