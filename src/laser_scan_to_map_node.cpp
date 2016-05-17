@@ -3,6 +3,17 @@
 #include <geometry_msgs/Pose.h>
 #include <vector>
 #include <iostream>
+#include "opencv2/core/core.hpp"
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/image_encodings.h>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/highgui/highgui.hpp>
+
+#define proportion_size 0.05
+
+using namespace cv;
+using namespace std;
 
 //globals for the laser scanner:
 float angle_min ;       // start angle of the scan [rad]
@@ -76,7 +87,18 @@ void laser_scan_callback(const sensor_msgs::LaserScan &msg)
 	}
 }
 
-
+void update_obstacle_map(cv::Mat &obstacle_map)
+{
+	size_t i;
+		if(!is_first_run)
+		{
+			for (i=0;i<ranges.size();i++)
+			{	
+			obstacle_map.at<uchar>((int)(x_range[i]/proportion_size),(int)(y_range[i]/proportion_size))=1;
+			}
+		}
+	
+}
 
 
 int main(int argc, char** argv){
@@ -84,6 +106,18 @@ int main(int argc, char** argv){
   ros::NodeHandle n;
   ros::Subscriber laser_scan_sub = n.subscribe("/laser_scan", 1000,laser_scan_callback);
   ros::Subscriber position_sub = n.subscribe("/rosbot/position", 1000,position_callback);
-  ros::spin();
-
+  ros::Rate loop_rate(30);
+  image_transport::ImageTransport it(n);
+  image_transport::Publisher pub = it.advertise("camera/image", 1);
+  sensor_msgs::ImagePtr obstacle_map_msg;
+  Mat obstacle_map = cv::Mat(100,100, CV_8UC1,255);
+  
+  while(n.ok())
+  {
+	update_obstacle_map(obstacle_map); 
+	obstacle_map_msg = cv_bridge::CvImage(std_msgs::Header(), "mono8", obstacle_map).toImageMsg();
+	pub.publish(obstacle_map_msg);
+	loop_rate.sleep();  
+	ros::spinOnce();  
+  }
 }
