@@ -11,6 +11,8 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #define proportion_size 0.05
+#define x_size_of_map 100
+#define y_size_of_map 100
 
 using namespace cv;
 using namespace std;
@@ -94,7 +96,16 @@ void update_obstacle_map(cv::Mat &obstacle_map)
 		{
 			for (i=0;i<ranges.size();i++)
 			{	
-			obstacle_map.at<uchar>((int)(x_range[i]/proportion_size),(int)(y_range[i]/proportion_size))=1;
+				if(	(int)(x_range[i]/proportion_size)<x_size_of_map && (int)(y_range[i]/proportion_size)<y_size_of_map)
+				{
+					obstacle_map.at<uchar>((int)(y_range[i]/proportion_size),(int)(x_range[i]/proportion_size))=1;
+					//ROS_INFO("x_range[%d]=%f,      y_range[%d]=%f",i,x_range[i],i,y_range[i]);
+				}
+				else
+				{
+					obstacle_map.at<uchar>(y_size_of_map-1,x_size_of_map-1)=1;
+					
+				}
 			}
 		}
 	
@@ -104,13 +115,13 @@ void update_obstacle_map(cv::Mat &obstacle_map)
 int main(int argc, char** argv){
   ros::init(argc, argv, "laser_scan_to_map");
   ros::NodeHandle n;
-  ros::Subscriber laser_scan_sub = n.subscribe("/laser_scan", 1000,laser_scan_callback);
+  ros::Subscriber laser_scan_sub = n.subscribe("/scan", 1000,laser_scan_callback);
   ros::Subscriber position_sub = n.subscribe("/rosbot/position", 1000,position_callback);
   ros::Rate loop_rate(30);
   image_transport::ImageTransport it(n);
   image_transport::Publisher pub = it.advertise("camera/image", 1);
   sensor_msgs::ImagePtr obstacle_map_msg;
-  Mat obstacle_map = cv::Mat(100,100, CV_8UC1,255);
+  Mat obstacle_map = cv::Mat(x_size_of_map,y_size_of_map, CV_8UC1,255);
   
   while(n.ok())
   {
